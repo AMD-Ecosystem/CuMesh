@@ -1,5 +1,3 @@
-// Copyright (c) 2026 Advanced Micro Devices, Inc.
-//
 // Windows HIP build: compile the cubvh pybind binding via hipcc (clang) to
 // avoid MSVC rejecting HIP __attribute__ extensions in torch/extension.h.
 // eigen_hip_compat.h (CuMesh, hip_cuda_compat/) provides std:: algorithms in
