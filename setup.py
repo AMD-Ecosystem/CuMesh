@@ -165,6 +165,23 @@ if IS_WINDOWS and IS_HIP:
     cubvh_sources = _hipify_cubvh_sources(cubvh_sources, cubvh_include_dirs)
 
 # -------------------------------------------------
+# cubvh symbol visibility
+# -------------------------------------------------
+# GCC/clang spelling; MSVC has no equivalent (nothing is exported unless it is
+# dllexport-ed). nvcc parses the flags given to it as its own command line and
+# rejects host-compiler flags, so the CUDA device pass has to forward them with
+# -Xcompiler; hipcc is clang driven and takes them directly.
+if IS_WINDOWS and not IS_HIP:
+    visibility_flags = []
+    visibility_nvcc_flags = []
+else:
+    visibility_flags = ["-fvisibility=hidden", "-fvisibility-inlines-hidden"]
+    visibility_nvcc_flags = (
+        visibility_flags if IS_HIP
+        else [f"-Xcompiler={flag}" for flag in visibility_flags]
+    )
+
+# -------------------------------------------------
 # Extensions
 # -------------------------------------------------
 ext_modules = [
@@ -211,7 +228,7 @@ ext_modules = [
             # Hide cubvh's C++ symbols so this module's copy cannot interpose with
             # another cubvh in the same process; lets us consume the upstream-clean
             # cubvh (cubvh:: namespace) without a downstream namespace-wrap patch.
-            "cxx": cxx_flags + ["-fvisibility=hidden", "-fvisibility-inlines-hidden"],
+            "cxx": cxx_flags + visibility_flags,
             # NVCC-only flags (--extended-lambda, -U__CUDA_NO_HALF_*) are not
             # needed for hipcc; torch's hipify handles the half-precision types.
             "nvcc": (nvcc_flags if IS_HIP else nvcc_flags + [
@@ -219,7 +236,7 @@ ext_modules = [
                 "-U__CUDA_NO_HALF_OPERATORS__",
                 "-U__CUDA_NO_HALF_CONVERSIONS__",
                 "-U__CUDA_NO_HALF2_OPERATORS__",
-            ]) + ["-fvisibility=hidden", "-fvisibility-inlines-hidden"],
+            ]) + visibility_nvcc_flags,
         },
     ),
 
