@@ -11,9 +11,12 @@ Key features include:
 
 ### Prerequisites
 *   Python >= 3.8
-*   PyTorch >= 2.4 (with CUDA support)
-*   CUDA Toolkit >= 12.4 (matching your PyTorch version)
-*   For AMD GPUs, a ROCm-enabled PyTorch build and a matching ROCm installation with the HIP compiler
+*   For NVIDIA GPUs:
+    *   PyTorch >= 2.4 with CUDA support
+    *   CUDA Toolkit >= 12.4 (matching your PyTorch version)
+*   For AMD GPUs:
+    *   PyTorch >= 2.4 with ROCm support
+    *   A matching ROCm installation with the HIP compiler
 
 ### Build from Source
 
