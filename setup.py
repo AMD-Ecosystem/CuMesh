@@ -34,25 +34,35 @@ def _hipify_cubvh_sources(sources, include_dirs):
     at::cuda::getCurrentCUDAStream() (only the hipified output uses
     at::hip::getCurrentHIPStreamMasqueradingAsCUDA()).
 
-    We run hipify here with project_directory at the cubvh src dir, so the walk
-    sees those files (no third_party prune at that root) and emits api_gpu.hip /
-    bvh.hip with the correct stream rewrite. The .hip outputs are generated build
-    artifacts; the cubvh submodule source stays pristine and upstream-mergeable,
-    and no manual stream shim is needed. _BuildExt registers .hip with MSVC so the
-    outputs then compile. Linux is unaffected (torch hipifies cubvh in place there
-    via its normal clang path; this helper is Windows-only).
+    We run hipify here with project_directory at the cubvh root, so the walk sees
+    those files (no third_party prune at that root) and emits api_gpu.hip /
+    bvh.hip with the correct stream rewrite. The scope has to cover cubvh's
+    include/ tree as well as its src/ tree: cubvh's own gpu/api_gpu.h includes
+    <ATen/cuda/CUDAContext.h>, and unless hipify rewrites that header too, the
+    translation unit pulls in both ATen/cuda and ATen/hip, which declare the same
+    c10::cuda::CUDAStream and cannot coexist. Hipifying the header yields
+    gpu/api_gpu_hip.h with <ATen/hip/HIPContext.h> instead, which is exactly what
+    the Linux build already compiles. The .hip / _hip.h outputs are generated
+    build artifacts; the cubvh submodule source stays pristine and
+    upstream-mergeable, and no manual stream shim is needed. _BuildExt registers
+    .hip with MSVC so the outputs then compile. Linux is unaffected (torch
+    hipifies cubvh in place there via its normal clang path; this helper is
+    Windows-only).
     """
     from torch.utils.hipify import hipify_python
 
     cubvh_cu = [s for s in sources if s.endswith(".cu") and "cubvh" in s.replace("\\", "/")]
     if not cubvh_cu:
         return sources
-    cubvh_src_dir = os.path.dirname(os.path.abspath(cubvh_cu[0]))
+    cubvh_root = os.path.join(ROOT, "third_party", "cubvh")
     result = hipify_python.hipify(
-        project_directory=cubvh_src_dir,
-        output_directory=cubvh_src_dir,
+        project_directory=cubvh_root,
+        output_directory=cubvh_root,
         header_include_dirs=include_dirs,
-        includes=[os.path.join(cubvh_src_dir, "*")],
+        includes=[
+            os.path.join(cubvh_root, "src", "*"),
+            os.path.join(cubvh_root, "include", "*"),
+        ],
         extra_files=[os.path.abspath(s) for s in cubvh_cu],
         is_pytorch_extension=True,
         hipify_extra_files_only=True,
