@@ -63,10 +63,11 @@ def _hipify_cubvh_sources(sources, include_dirs):
             os.path.join(cubvh_root, "src", "*"),
             os.path.join(cubvh_root, "include", "*"),
         ],
-        # extra_files entries are matched against hipify's file list verbatim,
-        # after that list and the candidate path have been normalized to forward
-        # slashes; a Windows-style path therefore never matches and the file is
-        # skipped. Only entries outside the walk root above depend on this.
+        # hipify appends extra_files entries to its file list verbatim, but
+        # normalizes a candidate to forward slashes before the exact-match
+        # test, so a backslash path from os.path.abspath() never matches and
+        # the file is skipped. Only entries outside the walk root above depend
+        # on this; the rest have a forward-slash duplicate from the walk.
         extra_files=[os.path.abspath(s).replace(os.sep, "/") for s in cubvh_cu],
         is_pytorch_extension=True,
         hipify_extra_files_only=True,
