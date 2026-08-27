@@ -211,8 +211,9 @@ __marimo__/
 *_hip.h
 *_hip.cpp
 *_hip.cuh
-# hipify maps a "cuda" path component to "hip" when it writes a rewritten
-# header, so a Windows ROCm build can drop a copy of hip_cuda_compat/ here.
+# hipify replaces a "cuda" substring anywhere in the directory path with "hip"
+# when it writes a rewritten header, so a Windows ROCm build can drop a copy of
+# hip_cuda_compat/ here.
 hip_hip_compat/
 
 # Example outputs
